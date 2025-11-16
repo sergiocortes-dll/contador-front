@@ -1,18 +1,7 @@
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { ArrowUp } from "lucide-react";
+import AddAnonCount from "@/components/blocks/add_anon_count";
+import AddCount from "@/components/blocks/add_count";
+import CreateCounter from "@/components/blocks/create_counter";
 import React from "react";
-import { Button } from "../components/ui/button";
 import { Separator } from "../components/ui/separator";
 import { Spinner } from "../components/ui/spinner";
 import type { CounterWithCount } from "../types";
@@ -21,8 +10,9 @@ function Index() {
   const [counters, setCounters] = React.useState<CounterWithCount[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | unknown>("");
+  const [refreshTrigger, setRefreshTrigger] = React.useState(0);
 
-  async function getCountersWithCount() {
+  const getCountersWithCount = React.useCallback(async () => {
     try {
       setError("");
       setLoading(true);
@@ -36,16 +26,21 @@ function Index() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   React.useEffect(() => {
     getCountersWithCount();
+  }, [getCountersWithCount, refreshTrigger]); // Añadimos refreshTrigger como dependencia
+
+  // Función para refrescar los contadores desde los componentes hijos
+  const refreshCounters = React.useCallback(() => {
+    setRefreshTrigger((prev) => prev + 1);
   }, []);
 
   return (
     <>
       <div className="flex flex-col gap-4 p-4">
-        <Button variant="outline">Añadir contador</Button>
+        <CreateCounter onCounterCreated={refreshCounters} />
 
         <Separator />
 
@@ -68,7 +63,7 @@ function Index() {
             {counters.map((c) => (
               <div
                 key={c.id}
-                className="border p-4 h-auto gap-4 flex flex-col items-start rounded-md hover:bg-accent cursor-pointer"
+                className="border p-4 h-auto gap-4 flex flex-col items-start rounded-md hover:bg-[rgba(255,255,255,.025)]"
               >
                 <div className="items-start rounded-sm flex gap-2 w-full">
                   <div className="flex-1 flex flex-col gap-2">
@@ -81,51 +76,13 @@ function Index() {
 
                 <Separator />
 
-                <div className="flex gap-2 justify-end w-full">
-                  <Button variant="ghost">Añadir anonimamente</Button>
-
-                  <Dialog>
-                    <form>
-                      <DialogTrigger asChild>
-                        <Button variant="outline">
-                          Añadir <ArrowUp />
-                        </Button>
-                      </DialogTrigger>
-
-                      <DialogContent className="sm:max-w-[425px]">
-                        <DialogHeader>
-                          <DialogTitle>{c.name}</DialogTitle>
-                          <DialogDescription>{c.description}</DialogDescription>
-                        </DialogHeader>
-
-                        <FieldGroup>
-                          <FieldSet>
-                            <FieldGroup>
-                              <Field>
-                                <FieldLabel htmlFor="createdBy">
-                                  Enviado por:
-                                </FieldLabel>
-                                <Input
-                                  id="createdBy"
-                                  placeholder="Escribe tu nombre ;)"
-                                />
-                              </Field>
-                            </FieldGroup>
-                          </FieldSet>
-                        </FieldGroup>
-
-                        <DialogFooter>
-                          <DialogClose asChild>
-                            <Button variant="outline">Cancelar</Button>
-                          </DialogClose>
-
-                          <Button type="submit">
-                            Añadir <ArrowUp />
-                          </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </form>
-                  </Dialog>
+                <div className="flex items-center h-8 gap-2 justify-end w-full">
+                  <AddAnonCount counter={c} onCountAdded={refreshCounters} />
+                  <Separator orientation="vertical" />
+                  <AddCount
+                    counter={c}
+                    onCountAdded={refreshCounters} // Pasamos la función de refresco
+                  />
                 </div>
               </div>
             ))}

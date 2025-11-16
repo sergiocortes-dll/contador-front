@@ -5,3 +5,10 @@ export interface CounterWithCount {
   description: string;
   createdBy: string;
 }
+
+export interface Reason {
+  id: number;
+  name: string;
+  count: number;
+  counterId: number;
+}
