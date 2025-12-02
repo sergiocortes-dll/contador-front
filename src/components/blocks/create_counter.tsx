@@ -43,7 +43,6 @@ export default function CreateCounter({
 
     // Validación básica
     if (!formData.name.trim() || !formData.createdBy.trim()) {
-
       return;
     }
 
@@ -68,8 +67,6 @@ export default function CreateCounter({
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
       }
-
-
 
       // Resetear formulario y cerrar sheet
       setFormData({
@@ -103,7 +100,9 @@ export default function CreateCounter({
   return (
     <Sheet open={isOpen} onOpenChange={handleOpenChange}>
       <SheetTrigger asChild>
-        <Button variant="outline">Crear contador</Button>
+        <Button variant="outline" className="flex-1">
+          Crear contador
+        </Button>
       </SheetTrigger>
       <SheetContent>
         <form onSubmit={handleSubmit}>
