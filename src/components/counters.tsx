@@ -1,19 +1,42 @@
 import AddAnonCount from "@/components/blocks/add_anon_count";
 import AddCount from "@/components/blocks/add_count";
 import CreateCounter from "@/components/blocks/create_counter";
-import { ArrowDownUp } from "lucide-react";
+import { ArrowDownUp, Heart } from "lucide-react";
 import React from "react";
 import { Separator } from "../components/ui/separator";
 import { Spinner } from "../components/ui/spinner";
 import type { CounterWithCount } from "../types";
 import { Button } from "./ui/button";
 
-function Counter() {
+type CounterProps = {
+  favs: number[];
+  setFavs: (favs: number[]) => void;
+};
+
+function Counter({ favs, setFavs }: CounterProps) {
   const [order, setOrder] = React.useState("desc");
   const [counters, setCounters] = React.useState<CounterWithCount[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | unknown>("");
   const [refreshTrigger, setRefreshTrigger] = React.useState(0);
+
+  React.useEffect(() => {
+    const storage = localStorage.getItem("favs");
+    setFavs(storage ? JSON.parse(storage) : []);
+  }, []);
+
+  const handleSave = (id: number) => {
+    const exists = favs.includes(id);
+
+    if (!exists && favs.length >= 4) {
+      alert('No se pueden agregar más de 4.');
+      return;
+    }
+
+    const updated = exists ? favs.filter((f) => f !== id) : [...favs, id];
+
+    setFavs(updated); // actualiza en el padre
+  };
 
   const getCountersWithCount = React.useCallback(async () => {
     try {
@@ -35,9 +58,8 @@ function Counter() {
 
   React.useEffect(() => {
     getCountersWithCount();
-  }, [getCountersWithCount, refreshTrigger]); // Añadimos refreshTrigger como dependencia
+  }, [getCountersWithCount, refreshTrigger]);
 
-  // Función para refrescar los contadores desde los componentes hijos
   const refreshCounters = React.useCallback(() => {
     setRefreshTrigger((prev) => prev + 1);
   }, []);
@@ -76,32 +98,48 @@ function Counter() {
           </div>
         ) : (
           <div className="flex flex-col gap-4">
-            {counters.map((c) => (
-              <div
-                key={c.id}
-                className="border p-4 h-auto gap-4 flex flex-col items-start rounded-md hover:bg-[rgba(255,255,255,.025)]"
-              >
-                <div className="items-start rounded-sm flex gap-2 w-full">
-                  <div className="flex-1 flex flex-col gap-2">
-                    <span className="text-2xl">{c.name}</span>
-                    <span>{c.description}</span>
-                    <span className="text-zinc-400">Por: {c.createdBy}</span>
+            {counters.map((c) => {
+              const isFav = favs.includes(c.id);
+
+              return (
+                <div
+                  key={c.id}
+                  className="border p-4 h-auto gap-4 flex flex-col items-start rounded-md hover:bg-[rgba(255,255,255,.025)]"
+                >
+                  <div className="items-start rounded-sm flex gap-2 w-full">
+                    <div className="flex-1 flex flex-col gap-2">
+                      <span className="text-2xl">{c.name}</span>
+                      <span>{c.description}</span>
+                      <span className="text-zinc-400">Por: {c.createdBy}</span>
+                    </div>
+                    <span className="text-5xl">{c.count}</span>
                   </div>
-                  <span className="text-5xl">{c.count}</span>
-                </div>
 
-                <Separator />
+                  <Separator />
 
-                <div className="flex items-center h-8 gap-2 justify-end w-full">
-                  <AddAnonCount counter={c} onCountAdded={refreshCounters} />
-                  <Separator orientation="vertical" />
-                  <AddCount
-                    counter={c}
-                    onCountAdded={refreshCounters} // Pasamos la función de refresco
-                  />
+                  <div className="flex items-center h-8 gap-2 justify-end w-full">
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleSave(c.id)}
+                      className="p-2"
+                    >
+                      <Heart
+                        className={isFav ? "fill-red-500 text-red-500" : ""}
+                      />
+                    </Button>
+
+                    <div className="flex gap-1 flex-1 justify-end items-center">
+                      <AddAnonCount
+                        counter={c}
+                        onCountAdded={refreshCounters}
+                      />
+                      <Separator orientation="vertical" />
+                      <AddCount counter={c} onCountAdded={refreshCounters} />
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
